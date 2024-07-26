@@ -1,34 +1,28 @@
-name: Check - BackEnd
+name: Create and publish a Docker image
+
 
 on:
-  pull_request:
+  push:
+
 
 env:
-  IMAGE_NAME: justdab:0.0.1
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
 
 jobs:
-  publish-registry:
-    strategy:
-      matrix:
-        name: [Java21]
-        include:
-          - name: Java21
-            os: ubuntu-latest
-            java-version: 21
-    runs-on: ${{ matrix.os }}
+  build-and-push-image:
+    runs-on: ubuntu-latest
 
     permissions:
-      packages: write
       contents: read
+      packages: write
       attestations: write
       id-token: write
 
     steps:
-      - name: Clone Project
+      - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Build Image
-        run: docker build . --file Dockerfile --tag $IMAGE_NAME --label "runnumber=${GITHUB_RUN_ID}"
 
       - name: Log in to the Container registry
         uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
@@ -36,11 +30,14 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+
 
       - name: Build and push Docker image
         id: push
